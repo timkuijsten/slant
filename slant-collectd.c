@@ -282,7 +282,7 @@ main(int argc, char *argv[])
 	struct kwbp	*db = NULL;
 	struct record_q	*rq;
 	struct sysinfo	*info;
-	int		 c, rc = 0, noop = 0, verb = 0;
+	int		 c, rc = 0, noop = 0, verb = 0, stdinsrc = 0;
 	const char	*dbfile = "/var/www/data/slant.db";
 	char		*d, *discs = NULL, *procs = NULL;
 	struct syscfg	 cfg;
@@ -301,7 +301,7 @@ main(int argc, char *argv[])
 
 	memset(&cfg, 0, sizeof(struct syscfg));
 
-	while (-1 != (c = getopt(argc, argv, "d:nvf:p:")))
+	while (-1 != (c = getopt(argc, argv, "d:nvf:p:s")))
 		switch (c) {
 		case 'd':
 			discs = optarg;
@@ -314,6 +314,9 @@ main(int argc, char *argv[])
 			break;
 		case 'p':
 			procs = optarg;
+			break;
+		case 's':
+			stdinsrc = 1;
 			break;
 		case 'v':
 			verb = 1;
@@ -407,8 +410,13 @@ main(int argc, char *argv[])
 	 */
 
 	while ( ! doexit) {
-		if ( ! sysinfo_update(&cfg, info))
-			goto out;
+		if (stdinsrc) {
+			if ( ! fsysinfo_update(stdin, &cfg, info))
+				goto out;
+		} else {
+			if ( ! sysinfo_update(&cfg, info))
+				goto out;
+		}
 		if (NULL != db) {
 			rq = db_record_list_lister(db);
 			update(db, info, rq);
@@ -428,7 +436,7 @@ out:
 	return rc ? EXIT_SUCCESS : EXIT_FAILURE;
 usage:
 	fprintf(stderr, "usage: %s "
-		"[-nv] "
+		"[-nsv] "
 		"[-d discs] "
 		"[-f dbfile]\n", getprogname());
 	return EXIT_FAILURE;

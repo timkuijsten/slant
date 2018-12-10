@@ -30,6 +30,7 @@ struct	syscfg {
 __BEGIN_DECLS
 
 struct sysinfo	*sysinfo_alloc(void);
+int		fsysinfo_update(FILE *, const struct syscfg *, struct sysinfo *);
 int 		 sysinfo_update(const struct syscfg *, struct sysinfo *);
 void 		 sysinfo_free(struct sysinfo *);
 

@@ -279,6 +279,11 @@ sysinfo_alloc(void)
 		return NULL;
 	}
 
+	if ((p->ifstats = calloc(1, sizeof(*p->ifstats))) == NULL) {
+		sysinfo_free(p);
+		return NULL;
+	}
+
 	return p;
 }
 
@@ -612,6 +617,87 @@ sysinfo_update_disc(const struct syscfg *cfg, struct sysinfo *p)
 	}
 
 	free(buf);
+	return 1;
+}
+
+/*
+ * Update info based on a line from a file pointer.
+ *
+ * Return 1 on success, 0 on failure.
+ */
+int
+fsysinfo_update(FILE *fp, const struct syscfg *cfg, struct sysinfo *p)
+{
+	int r;
+
+	r = fscanf(fp, "%zu|%*lld|%d|%lf|%lf|%lf|%lld|%lf|%lld|%lld|%lld|%zu|"
+	    "%lf|%zu|%llu|%llu|%lld|%lld|%lld|"
+	    "%llu|%llu|%llu|%llu|%llu|%llu|%llu|%d|%d|"	/* ifstats.ifs_cur */
+	    "%llu|%llu|%llu|%llu|%llu|%llu|%llu|%d|%d|"	/* ifstats.ifs_old */
+	    "%llu|%llu|%llu|%llu|%llu|%llu|%llu|%d|%d|"	/* ifstats.ifs_now */
+	    "%hhu|"	/* ifstats.ifs_flag */
+	    "%llu|%llu|%llu|%llu|%llu|%llu|%llu|%d|%d|" /* ifsum */
+	    "%*s|%*s|\n",
+	    &p->sample, /* sample number */
+	    /* timestamp */
+	    &p->pageshift, /* used for memory pages */
+	    &p->mem_avg, /* average memory */
+	    &p->nproc_pct, /* nprocs percent */
+	    &p->nfile_pct, /* nfiles percent */
+	    p->cpu_states, /* used for cpu compute */
+	    &p->cpu_avg, /* average cpu */
+	    *p->cp_time, /* used for cpu compute */
+	    *p->cp_old, /* used for cpu compute */
+	    *p->cp_diff, /* used for cpu compute */
+	    &p->ncpu, /* number cpus */
+	    &p->rproc_pct, /* pct command (by name) found */
+	    &p->ifstatsz, /* used for inet compute */
+	    &p->disc_rbytes, /* last disc total read */
+	    &p->disc_wbytes, /* last disc total write */
+	    &p->disc_ravg, /* average reads/sec */
+	    &p->disc_wavg, /* average reads/sec */
+	    &p->boottime,
+	    &p->ifstats->ifs_cur.ifc_ib,		/* input bytes */
+	    &p->ifstats->ifs_cur.ifc_ip,		/* input packets */
+	    &p->ifstats->ifs_cur.ifc_ie,		/* input errors */
+	    &p->ifstats->ifs_cur.ifc_ob,		/* output bytes */
+	    &p->ifstats->ifs_cur.ifc_op,		/* output packets */
+	    &p->ifstats->ifs_cur.ifc_oe,		/* output errors */
+	    &p->ifstats->ifs_cur.ifc_co,		/* collisions */
+	    &p->ifstats->ifs_cur.ifc_flags,	/* up / down */
+	    &p->ifstats->ifs_cur.ifc_state,	/* link state */
+	    &p->ifstats->ifs_old.ifc_ib,		/* input bytes */
+	    &p->ifstats->ifs_old.ifc_ip,		/* input packets */
+	    &p->ifstats->ifs_old.ifc_ie,		/* input errors */
+	    &p->ifstats->ifs_old.ifc_ob,		/* output bytes */
+	    &p->ifstats->ifs_old.ifc_op,		/* output packets */
+	    &p->ifstats->ifs_old.ifc_oe,		/* output errors */
+	    &p->ifstats->ifs_old.ifc_co,		/* collisions */
+	    &p->ifstats->ifs_old.ifc_flags,	/* up / down */
+	    &p->ifstats->ifs_old.ifc_state,	/* link state */
+	    &p->ifstats->ifs_now.ifc_ib,		/* input bytes */
+	    &p->ifstats->ifs_now.ifc_ip,		/* input packets */
+	    &p->ifstats->ifs_now.ifc_ie,		/* input errors */
+	    &p->ifstats->ifs_now.ifc_ob,		/* output bytes */
+	    &p->ifstats->ifs_now.ifc_op,		/* output packets */
+	    &p->ifstats->ifs_now.ifc_oe,		/* output errors */
+	    &p->ifstats->ifs_now.ifc_co,		/* collisions */
+	    &p->ifstats->ifs_now.ifc_flags,	/* up / down */
+	    &p->ifstats->ifs_now.ifc_state,	/* link state */
+	    &p->ifstats->ifs_flag,
+	    &p->ifsum.ifc_ib,
+	    &p->ifsum.ifc_ip,
+	    &p->ifsum.ifc_ie,
+	    &p->ifsum.ifc_ob,
+	    &p->ifsum.ifc_op,
+	    &p->ifsum.ifc_oe,
+	    &p->ifsum.ifc_co,
+	    &p->ifsum.ifc_flags,
+	    &p->ifsum.ifc_state);
+
+	if (r != 55)
+		return 0;
+
 	return 1;
 }
 

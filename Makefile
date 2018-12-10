@@ -100,6 +100,9 @@ slant-upgrade: slant-upgrade.in.sh
 	    -e "s!@CGIBIN@!$(CGIBIN)!g" \
 	    -e "s!@SHAREDIR@!$(SHAREDIR)!g" slant-upgrade.in.sh >$@
 
+slant-agent: slant-agent.c slant-agent.h slant-collectd-openbsd.o
+	$(CC) -o $@ $(LDFLAGS) slant-collectd-openbsd.o slant-agent.c
+
 # Only run this for development.
 # Real systems will install with slant-upgrade(8).
 
@@ -128,6 +131,7 @@ clean:
 	rm -f slant-collectd slant-collectd.o slant-collectd-openbsd.o
 	rm -f slant-cgi slant-cgi.o
 	rm -f slant $(SLANT_OBJS)
+	rm -f slant-agent
 	rm -f $(WWW)
 
 slant.db: slant.sql
